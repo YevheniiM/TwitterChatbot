@@ -1,0 +1,43 @@
+version: '3.9'
+
+services:
+  database:
+    image: mysql:5.7
+    container_name: database
+    ports:
+      - '3306:3306'
+    expose:
+      - 3306
+    environment:
+      MYSQL_DATABASE: 'twitter_chatbot'
+      MYSQL_USER: 'admin'
+      MYSQL_PASSWORD: 'admin'
+      MYSQL_ROOT_PASSWORD: 'admin'
+      MYSQL_PORT: 3306
+    volumes:
+      - ./.data/mysql:/var/lib/mysql
+  core:
+    container_name: core
+    build:
+      context: .
+      dockerfile: config/dev.Dockerfile
+    entrypoint: [ "bash", "/proj/config/start.sh" ]
+    ports:
+      - "8000:8000"
+    environment:
+      MYSQL_DATABASE: 'twitter_chatbot'
+      MYSQL_USER: 'admin'
+      MYSQL_PASSWORD: 'admin'
+      MYSQL_ROOT_PASSWORD: 'admin'
+      MYSQL_PORT: 3306
+      MYSQL_HOST: database
+      DEBUG: 'True'
+      IS_LOCAL: 'True'
+    volumes:
+      - .:/proj
+      - static_volume:/proj/static
+    depends_on:
+      - database
+
+volumes:
+  static_volume:
