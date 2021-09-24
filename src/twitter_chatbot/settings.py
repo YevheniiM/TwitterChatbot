@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 import os
 from pathlib import Path
+
 import environ
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -23,6 +24,13 @@ env = environ.Env(
     SECRET_KEY=(str, "t7b-f#0wgzta7x9u-y#+6i@=lebm=d^ao52km&g4vlxzl*m3xb"),
     ALLOWED_HOSTS=(list, ["*"]),
 )
+
+API_KEY = os.getenv("API_KEY")
+API_KEY_SECRET = os.getenv("API_KEY_SECRET")
+BEARER_TOKEN = os.getenv("BEARER_TOKEN")
+ACCESS_TOKEN = os.getenv("ACCESS_TOKEN")
+ACCESS_TOKEN_SECRET = os.getenv("ACCESS_TOKEN_SECRET")
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 
 SECRET_KEY = os.getenv(
     "SECRET_KEY", "t7b-f#0wgzta7x9u-y#+6i@=lebm=d^ao52km&g4vlxzl*m3xb"
@@ -144,7 +152,7 @@ LOGGING = {
         "file": {
             "level": "INFO",
             "class": "logging.FileHandler",
-            "filename": "/data/logs/django.log",
+            "filename": "../logs/django.log",
         },
     },
     "root": {"handlers": ["console", "file"], "level": "INFO"},
@@ -152,3 +160,8 @@ LOGGING = {
         "django": {"handlers": ["console", "file"], "level": "INFO", "propagate": True}
     },
 }
+
+# Configure Django App for Heroku.
+import django_heroku
+
+django_heroku.settings(locals())
