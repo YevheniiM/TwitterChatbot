@@ -22,11 +22,6 @@ def find_whole_word(word):
     return re.compile(r'\b({0})\b'.format(word), flags=re.IGNORECASE).search
 
 
-class TwitterMessage:
-    def __init__(self, message):
-        pass
-
-
 class KeywordManager:
     def __init__(self, message):
         self.message = message
@@ -46,11 +41,12 @@ class KeywordManager:
             logger.warning(ex)
 
     def _send_message(self, keywords, tweet_type):
+        url = f"https://twitter.com/i/web/status/{self.message.get('id_str', '')}"
         if keywords:
             message = f"{self.user.username}\n" \
                       f"Keywords: {', '.join(keywords)}\n" \
                       f"Type of tweet: {tweet_type}\n" \
-                      f"Full url: url"
+                      f"Full url: {url}"
             send_message(self.user.chat_id, message)
             print(f"Message:\n{message}")
         else:
