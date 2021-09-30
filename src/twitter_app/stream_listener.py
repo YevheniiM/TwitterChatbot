@@ -19,7 +19,8 @@ ACCESS_TOKEN_SECRET = os.getenv("ACCESS_TOKEN_SECRET")
 
 
 def find_whole_word(word):
-    return re.compile(r'\b({0})\b'.format(word), flags=re.IGNORECASE).search
+    word = '\\' + word if word.startswith('$') else word
+    return re.compile(r'({0})'.format(word), flags=re.IGNORECASE).search
 
 
 class KeywordManager:
@@ -146,7 +147,7 @@ def main():
     while True:
         initial_ids = TwitterUser.objects.values_list("user_id", flat=True)
         if not initial_ids:
-            time.sleep(5)
+            time.sleep(3)
             continue
 
         logger.info(f"Starting filtering on {initial_ids}...")
@@ -161,7 +162,7 @@ def main():
                 my_stream.disconnect()
                 break
 
-            time.sleep(5)
+            time.sleep(3)
 
 
 main()
