@@ -42,7 +42,7 @@ class KeywordManager:
             logger.warning(ex)
 
     def _send_message(self, keywords, tweet_type):
-        url = f"https://twitter.com/i/web/status/{self.message.get('id_str', '')}"
+        url = f"https://twitter.com/{self.user.username}/status/{self.message.get('id_str', '')}"
         if keywords:
             message = f"Username: {self.user.username}\n" \
                       f"Keywords: {', '.join(keywords)}\n" \
