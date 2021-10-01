@@ -49,7 +49,7 @@ class KeywordManager:
     def _send_message(self, keywords, tweet_type):
         url = f"https://twitter.com/{self.user.username}/status/{self.message.get('id_str', '')}"
         if keywords:
-            message = f"Username: {self.user.username}\n" \
+            message = f"Username: {self.user.username} [{self.user.channel_name}]\n" \
                       f"Keywords: {', '.join(keywords)}\n" \
                       f"Type of tweet: {tweet_type}\n" \
                       f"Full url: {url}"
