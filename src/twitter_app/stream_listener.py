@@ -17,6 +17,10 @@ BEARER_TOKEN = os.getenv("BEARER_TOKEN")
 ACCESS_TOKEN = os.getenv("ACCESS_TOKEN")
 ACCESS_TOKEN_SECRET = os.getenv("ACCESS_TOKEN_SECRET")
 
+auth = tweepy.OAuthHandler(API_KEY, API_KEY_SECRET)
+auth.set_access_token(ACCESS_TOKEN, ACCESS_TOKEN_SECRET)
+api = tweepy.API(auth)
+
 
 def find_whole_word(word):
     word = '\\' + word if word.startswith('$') else word
@@ -36,6 +40,7 @@ class KeywordManager:
             user_id = message.get('user', {}).get('id', None)
             if user_id:
                 user = TwitterUser.objects.get(user_id=user_id)
+                print(f"Found user: {user}, keywords: {user.keywords}")
                 return user
             logger.error(f"User is not found, message: {message}")
         except models.ObjectDoesNotExist as ex:
@@ -49,28 +54,32 @@ class KeywordManager:
                       f"Type of tweet: {tweet_type}\n" \
                       f"Full url: {url}"
             send_message(self.user.chat_id, message)
-            print(f"Message:\n{message}")
         else:
             print(f"No keywords were found in {self.message}")
 
     def _process_retweets(self):
         if self.message.get('retweeted_status', False):
-            text = self.message.get('retweeted_status').get('extended_tweet', {}).get('full_text', '')
+            if self.message.get('retweeted_status').get('truncated', False):
+                text = self.message.get('retweeted_status').get('extended_tweet', {}).get('full_text', '')
+            else:
+                text = self.message.get('retweeted_status').get('text')
+
             print(f"*** retweet ***\n{text}")
 
             keywords = self._get_keywords(text)
             print(f"Found {len(keywords)} keywords")
 
             self._send_message(keywords, tweet_type="retweet")
-
             return True
-        return False
 
-    def _process_replies(self):
         if self.message.get('quoted_status', False):
-            quoted_text = self.message.get('quoted_status').get('extended_tweet', {}).get('full_text', '')
+            if self.message.get('quoted_status').get('truncated', False):
+                quoted_text = self.message.get('quoted_status').get('extended_tweet', {}).get('full_text', '')
+            else:
+                quoted_text = self.message.get('quoted_status').get('text', '')
             quote = self.message.get('text', '')
-            print(f"*** reply ***\n{quote}\n{quoted_text}")
+
+            print(f"*** quote ***\n{quote}\n{quoted_text}")
 
             keywords = []
             keywords.extend(self._get_keywords(quote))
@@ -78,14 +87,37 @@ class KeywordManager:
 
             print(f"Found {len(keywords)} keywords")
 
-            self._send_message(keywords, tweet_type="reply")
+            self._send_message(keywords, tweet_type="quote")
+            return True
 
+        return False
+
+    def _process_replies(self):
+        if self.message.get('in_reply_to_status_id', False):
+            tweet = api.get_status(self.message.get('in_reply_to_status_id'))._json
+            text = tweet.get('text', '')
+            reply = self.message.get('text')
+
+            print(f"*** reply ***\nReply: {reply}\nText: {text}")
+
+            keywords = []
+            keywords.extend(self._get_keywords(text))
+            keywords.extend(self._get_keywords(reply))
+
+            print(f"Found {len(keywords)} keywords")
+
+            self._send_message(keywords, tweet_type="reply")
             return True
         return False
 
     def _process_tweets(self):
-        if not (self.message.get('quoted_status', False) or self.message.get('retweeted_status', False)):
-            text = self.message.get('text', '')
+        if not (self.message.get('quoted_status', False) or self.message.get('retweeted_status', False)
+                or self.message.get('in_reply_to_status_id', False)):
+            if self.message.get('truncated', False):
+                text = self.message.get('extended_tweet', {}).get('full_text', '')
+            else:
+                text = self.message.get('text', '')
+
             keywords = self._get_keywords(text)
             self._send_message(keywords, tweet_type="tweet")
             return True
@@ -137,32 +169,29 @@ class MyStreamListener(tweepy.StreamListener):
 
 
 def main():
-    logger.info("Starting stream_listener...")
-    auth = tweepy.OAuthHandler(API_KEY, API_KEY_SECRET)
-    auth.set_access_token(ACCESS_TOKEN, ACCESS_TOKEN_SECRET)
-    api = tweepy.API(auth)
+    print("Starting stream_listener...")
     my_stream_listener = MyStreamListener()
     my_stream = tweepy.Stream(auth=api.auth, listener=my_stream_listener)
 
     while True:
         initial_ids = TwitterUser.objects.values_list("user_id", flat=True)
         if not initial_ids:
-            time.sleep(3)
+            time.sleep(10)
             continue
 
-        logger.info(f"Starting filtering on {initial_ids}...")
+        print(f"Starting filtering on {initial_ids}...")
         my_stream.filter(initial_ids, is_async=True)
 
         while True:
             ids = TwitterUser.objects.values_list("user_id", flat=True)
 
             if set(initial_ids) != set(ids):
-                logger.info(f"New user [{set(ids) - set(initial_ids)}] was added")
-                logger.info("Disconnecting the stream...")
+                print(f"New user [{set(ids) - set(initial_ids)}] was added")
+                print("Disconnecting the stream...")
                 my_stream.disconnect()
                 break
 
-            time.sleep(3)
+            time.sleep(10)
 
 
 main()
