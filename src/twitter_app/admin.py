@@ -20,7 +20,7 @@ class TwitterUserAdmin(admin.ModelAdmin):
     inlines = [KeywordInline]
     model = TwitterUser
 
-    list_display = ('username', 'get_keywords')
+    list_display = ('username', 'get_keywords', 'channel_name')
 
     def save_model(self, request, obj, form, change):
         auth = tweepy.OAuthHandler(settings.API_KEY, settings.API_KEY_SECRET)
