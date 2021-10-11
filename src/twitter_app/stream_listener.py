@@ -169,28 +169,36 @@ class MyStreamListener(tweepy.StreamListener):
 
 def main():
     print("Starting stream_listener...")
-    my_stream_listener = MyStreamListener()
-    my_stream = tweepy.Stream(auth=api.auth, listener=my_stream_listener)
 
     while True:
-        initial_ids = TwitterUser.objects.values_list("user_id", flat=True)
-        if not initial_ids:
-            time.sleep(10)
-            continue
+        try:
+            my_stream_listener = MyStreamListener()
+            my_stream = tweepy.Stream(auth=api.auth, listener=my_stream_listener)
 
-        print(f"Starting filtering on {initial_ids}...")
-        my_stream.filter(initial_ids, is_async=True)
+            while True:
+                initial_ids = TwitterUser.objects.values_list("user_id", flat=True)
+                if not initial_ids:
+                    time.sleep(10)
+                    continue
 
-        while True:
-            ids = TwitterUser.objects.values_list("user_id", flat=True)
+                print(f"Starting filtering on {initial_ids}...")
+                my_stream.filter(initial_ids, is_async=True)
 
-            if set(initial_ids) != set(ids):
-                print(f"New user [{set(ids) - set(initial_ids)}] was added")
-                print("Disconnecting the stream...")
-                my_stream.disconnect()
-                break
+                while True:
+                    ids = TwitterUser.objects.values_list("user_id", flat=True)
 
-            time.sleep(10)
+                    if set(initial_ids) != set(ids):
+                        print(f"New user [{set(ids) - set(initial_ids)}] was added")
+                        print("Disconnecting the stream...")
+                        my_stream.disconnect()
+                        break
+
+                    time.sleep(10)
+        except Exception as ex:
+            print("Exception in the most outer while loop")
+            print(ex)
+            time.sleep(120)
+
 
 
 main()
