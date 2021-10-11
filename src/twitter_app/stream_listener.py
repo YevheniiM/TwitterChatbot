@@ -31,6 +31,8 @@ class KeywordManager:
     def __init__(self, message):
         self.message = message
         self.user = self._get_user(message)
+        if not self.user:
+            raise Exception("Couldn't find a user")
         self.include_replies = self.user.include_replies
         self.include_retweets = self.user.include_retweets
 
@@ -149,17 +151,14 @@ class KeywordManager:
 class MyStreamListener(tweepy.StreamListener):
     def on_status(self, status, ):
         message_obj = status._json
-        # pprint(message_obj)
-        # print()
-        # print()
-        # pprint('-'*30)
-        # print()
-        # print()
+        try:
+            manager = KeywordManager(message_obj)
+        except Exception as ex:
+            print(ex)
+            print("Status was not processed (error during the KeywordManager creation")
+            return
 
-        manager = KeywordManager(message_obj)
         manager.process()
-
-        # send_message(user.chat_id, message)
 
     def on_error(self, status_code):
         logger.error(f"on_error got {status_code} status code")
