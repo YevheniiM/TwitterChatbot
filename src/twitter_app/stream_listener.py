@@ -41,7 +41,7 @@ class KeywordManager:
         try:
             user_id = message.get('user', {}).get('id', None)
             if user_id:
-                user = TwitterUser.objects.get(user_id=user_id)
+                user = TwitterUser.objects.get(user_id=str(user_id))
                 print(f"Found user: {user}, keywords: {user.keywords}")
                 return user
             print(message)
