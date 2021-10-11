@@ -44,9 +44,11 @@ class KeywordManager:
                 user = TwitterUser.objects.get(user_id=user_id)
                 print(f"Found user: {user}, keywords: {user.keywords}")
                 return user
+            print(message)
             logger.error(f"User is not found, message: {message}")
         except models.ObjectDoesNotExist as ex:
-            logger.warning(ex)
+            print(message)
+            print(ex)
 
     def _send_message(self, keywords, tweet_type):
         url = f"https://twitter.com/{self.user.username}/status/{self.message.get('id_str', '')}"
