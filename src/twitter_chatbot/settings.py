@@ -64,6 +64,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'hirefire.contrib.django.middleware.HireFireMiddleware'
 ]
 
 ROOT_URLCONF = 'twitter_chatbot.urls'
@@ -162,6 +163,8 @@ LOGGING = {
 }
 
 CELERY_BROKER_URL = os.getenv("CLOUDAMQP_URL", "amqp://admin:admin@127.0.0.1:5672/myvhost")
+
+HIREFIRE_PROCS = ['tasks.WorkerProc']
 
 # Configure Django App for Heroku.
 import django_heroku
