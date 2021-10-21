@@ -123,7 +123,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = CELERY_TIMEZONE = env.str("TIMEZONE", default="UTC")
 
 USE_I18N = True
 
@@ -160,6 +160,8 @@ LOGGING = {
         "django": {"handlers": ["console", "file"], "level": "INFO", "propagate": True}
     },
 }
+
+CELERY_BROKER_URL = os.getenv("CLOUDAMQP_URL", "amqp://admin:admin@127.0.0.1:5672/myvhost")
 
 # Configure Django App for Heroku.
 import django_heroku
