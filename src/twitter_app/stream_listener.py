@@ -19,7 +19,6 @@ api = tweepy.API(auth)
 class MyStreamListener(tweepy.StreamListener):
     def on_status(self, status):
         print("Got the new tweet...")
-        print("Sending the task to the celery...")
         celery.current_app.send_task("twitter_app.tasks.parse_tweet", args=[status._json])
 
     def on_error(self, status_code):

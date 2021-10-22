@@ -3,6 +3,7 @@ import re
 
 import tweepy
 from celery import shared_task
+from django.conf import settings
 from django.db import models
 
 from telegram_app.api import send_message
@@ -10,7 +11,9 @@ from twitter_app.models import TwitterUser
 
 logger = logging.getLogger("celery_twitter_app")
 
-
+auth = tweepy.OAuthHandler(settings.API_KEY, settings.API_KEY_SECRET)
+auth.set_access_token(settings.ACCESS_TOKEN, settings.ACCESS_TOKEN_SECRET)
+api = tweepy.API(auth)
 
 
 class KeywordManager:
@@ -18,7 +21,7 @@ class KeywordManager:
         self.message = message
         self.user = self._get_user(message)
         if not self.user:
-            raise Exception("Couldn't find a user")
+            raise Exception(f"Couldn't find a user, message: {self.message.get('text', '')}")
         self.include_replies = self.user.include_replies
         self.include_retweets = self.user.include_retweets
 
@@ -30,10 +33,8 @@ class KeywordManager:
                 user = TwitterUser.objects.get(user_id=str(user_id))
                 print(f"Found user: {user}, keywords: {user.keywords}")
                 return user
-            print(message)
-            logger.error(f"User is not found, message: {message}")
+            print(f"User is not found, message: {message.get('text', '')}")
         except models.ObjectDoesNotExist as ex:
-            print(message)
             print(ex)
 
     @staticmethod
@@ -50,7 +51,7 @@ class KeywordManager:
                       f"Full url: {url}"
             send_message(self.user.chat_id, message)
         else:
-            print(f"No keywords were found in {self.message}")
+            print(f"No keywords were found in {self.message.get('text', '')}")
 
     def _process_retweets(self):
         if self.message.get('retweeted_status', False):
@@ -150,4 +151,3 @@ def parse_tweet(tweet):
     except Exception as ex:
         print(ex)
         print("Status was not processed (error during the KeywordManager creation)")
-        return
