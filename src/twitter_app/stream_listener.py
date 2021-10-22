@@ -4,6 +4,7 @@ import time
 import celery
 import tweepy
 from django.conf import settings
+from urllib3.exceptions import ProtocolError
 
 from tasks import app
 from twitter_app.models import TwitterUser
@@ -39,11 +40,15 @@ def main():
             while True:
                 initial_ids = TwitterUser.objects.values_list("user_id", flat=True)
                 if not initial_ids:
-                    time.sleep(10)
+                    time.sleep(0.1)
                     continue
 
                 print(f"Starting filtering on {initial_ids}...")
-                my_stream.filter(initial_ids, is_async=True)
+                try:
+                    my_stream.filter(initial_ids, is_async=True, stall_warnings=True)
+                except (ProtocolError, AttributeError) as ex:
+                    print(f"[ERROR]: protocol error: {ex}")
+                    continue
 
                 while True:
                     ids = TwitterUser.objects.values_list("user_id", flat=True)
@@ -54,11 +59,11 @@ def main():
                         my_stream.disconnect()
                         break
 
-                    time.sleep(10)
+                    time.sleep(0.1)
         except Exception as ex:
             print("Exception in the most outer while loop")
             print(ex)
-            time.sleep(120)
+            time.sleep(1)
 
 
 main()
