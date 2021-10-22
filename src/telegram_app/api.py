@@ -11,7 +11,7 @@ def send_message(group_id, text):
     for i in range(5):
         try:
             res = bot.send_message(int(group_id), text=text)
-            print(f"Sent message to {group_id}: {res}")
+            print(f"Sent message to {group_id}: {res}, {text}")
             break
         except Exception as ex:
             print(str(ex))
