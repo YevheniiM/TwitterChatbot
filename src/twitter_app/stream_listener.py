@@ -1,5 +1,6 @@
 import logging
 import time
+from threading import Thread
 
 import celery
 import tweepy
@@ -29,6 +30,24 @@ class MyStreamListener(tweepy.StreamListener):
         return True
 
 
+class ThreadedWrapper:
+    def __init__(self, stream: tweepy.Stream):
+        self.running = True
+        self.stream = stream
+
+    def threaded_function(self, initial_ids):
+        while self.running:
+            try:
+                self.stream.filter(initial_ids, is_async=False, stall_warnings=True)
+            except (ProtocolError, AttributeError) as ex:
+                print(f"[ERROR]: protocol error: {ex}")
+                continue
+
+    def disconnect(self):
+        self.running = False
+        self.stream.disconnect()
+
+
 def main():
     print("Starting stream_listener...")
 
@@ -44,11 +63,9 @@ def main():
                     continue
 
                 print(f"Starting filtering on {initial_ids}...")
-                try:
-                    my_stream.filter(initial_ids, is_async=True, stall_warnings=True)
-                except (ProtocolError, AttributeError) as ex:
-                    print(f"[ERROR]: protocol error: {ex}")
-                    continue
+                wrapper = ThreadedWrapper(my_stream)
+                thread = Thread(target=wrapper.threaded_function, args=(initial_ids,))
+                thread.start()
 
                 while True:
                     ids = TwitterUser.objects.values_list("user_id", flat=True)
@@ -56,10 +73,10 @@ def main():
                     if set(initial_ids) != set(ids):
                         print(f"New user [{set(ids) - set(initial_ids)}] was added")
                         print("Disconnecting the stream...")
-                        my_stream.disconnect()
+                        wrapper.disconnect()
                         break
 
-                    time.sleep(0.1)
+                    time.sleep(0.5)
         except Exception as ex:
             print("Exception in the most outer while loop")
             print(ex)
