@@ -1,4 +1,5 @@
 import logging
+import sys
 import time
 from threading import Thread
 
@@ -19,9 +20,17 @@ api = tweepy.API(auth)
 
 
 class MyStreamListener(tweepy.StreamListener):
+    def __init__(self):
+        self.running = True
+        super().__init__()
+
     def on_status(self, status):
         print("Got the new tweet...")
         celery.current_app.send_task("twitter_app.tasks.parse_tweet", args=[status._json])
+
+        if not self.running:
+            print("Raising exception in a listening thread")
+            raise Exception("Users has been changed, restarting the app")
 
     def on_error(self, status_code):
         logger.error(f"on_error got {status_code} status code")
@@ -42,6 +51,7 @@ class ThreadedWrapper:
             except (ProtocolError, AttributeError) as ex:
                 print(f"[ERROR]: protocol error: {ex}")
                 continue
+        print("Exiting the threaded_function....")
 
     def disconnect(self):
         self.running = False
@@ -74,6 +84,8 @@ def main():
                         print(f"New user [{set(ids) - set(initial_ids)}] was added")
                         print("Disconnecting the stream...")
                         wrapper.disconnect()
+                        thread.join()
+                        print("Stream joined! Restarting...")
                         break
 
                     time.sleep(0.5)
