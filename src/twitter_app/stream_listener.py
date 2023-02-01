@@ -1,5 +1,4 @@
 import logging
-import sys
 import time
 from threading import Thread
 
@@ -8,9 +7,7 @@ import tweepy
 from django.conf import settings
 from urllib3.exceptions import ProtocolError
 
-from tasks import app
 from twitter_app.models import TwitterUser
-from twitter_app.tasks import parse_tweet
 
 logger = logging.getLogger("stream_listener")
 
@@ -19,10 +16,12 @@ auth.set_access_token(settings.ACCESS_TOKEN, settings.ACCESS_TOKEN_SECRET)
 api = tweepy.API(auth)
 
 
-class MyStreamListener(tweepy.StreamListener):
-    def __init__(self):
+class MyStreamListener(tweepy.Stream):
+    def __init__(self, consumer_key, consumer_secret, access_token,
+                 access_token_secret, **kwargs):
         self.running = True
-        super().__init__()
+        super().__init__(consumer_key, consumer_secret, access_token,
+                         access_token_secret, **kwargs)
 
     def on_status(self, status):
         print("Got the new tweet...")
@@ -47,7 +46,7 @@ class ThreadedWrapper:
     def threaded_function(self, initial_ids):
         while self.running:
             try:
-                self.stream.filter(initial_ids, is_async=False, stall_warnings=True)
+                self.stream.filter(follow=initial_ids, threaded=False, stall_warnings=True)
             except (ProtocolError, AttributeError) as ex:
                 print(f"[ERROR]: protocol error: {ex}")
                 continue
@@ -63,8 +62,10 @@ def main():
 
     while True:
         try:
-            my_stream_listener = MyStreamListener()
-            my_stream = tweepy.Stream(auth=api.auth, listener=my_stream_listener)
+            my_stream = MyStreamListener(settings.API_KEY,
+                                         settings.API_KEY_SECRET,
+                                         settings.ACCESS_TOKEN,
+                                         settings.ACCESS_TOKEN_SECRET)
 
             while True:
                 initial_ids = TwitterUser.objects.values_list("user_id", flat=True)
