@@ -46,8 +46,14 @@ class ThreadedWrapper:
             else:
                 rule += f" OR from: {id_}"
 
-        self.stream.add_rules(tweepy.StreamRule(rule))
-        print(self.stream.get_rules())
+        rules_ids = [r.id for r in self.stream.get_rules().data]
+
+        if len(rules_ids):
+            print(self.stream.delete_rules(rules_ids))
+
+        print(self.stream.add_rules(tweepy.StreamRule(rule)))
+
+        print('Starting filtering the streem...')
         self.stream.filter(expansions=[
             'author_id',
             'referenced_tweets.id',
