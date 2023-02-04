@@ -16,19 +16,28 @@ auth.set_access_token(settings.ACCESS_TOKEN, settings.ACCESS_TOKEN_SECRET)
 api = tweepy.API(auth)
 
 
+def check_tweet_type(tweet_data: dict):
+    if (
+            tweet_data.get('referenced_tweets') and
+            tweet_data.get('referenced_tweets')[0].get('type')
+    ):
+        return tweet_data.get('referenced_tweets')[0].get('type')
+
+
+# noinspection PyProtectedMember
 class KeywordManager:
-    def __init__(self, message):
-        self.message = message
-        self.user = self._get_user(message)
+    def __init__(self, tweet_data: dict):
+        self.tweet_data = tweet_data
+        self.user = self._get_user(tweet_data)
         if not self.user:
-            raise Exception(f"Couldn't find a user, message: {self.message.get('text', '')}")
+            raise Exception(f"Couldn't find a user, message: {self.tweet_data.get('text', '')}")
         self.include_replies = self.user.include_replies
         self.include_retweets = self.user.include_retweets
 
     @staticmethod
     def _get_user(message):
         try:
-            user_id = message.get('user', {}).get('id', None)
+            user_id = message.get('author_id')
             if user_id:
                 user = TwitterUser.objects.get(user_id=str(user_id))
                 print(f"Found user: {user}, keywords: {user.keywords}")
@@ -43,7 +52,7 @@ class KeywordManager:
         return re.compile(r'({0})'.format(word), flags=re.IGNORECASE).search
 
     def _send_message(self, keywords, tweet_type):
-        url = f"https://twitter.com/{self.user.username}/status/{self.message.get('id_str', '')}"
+        url = f"https://twitter.com/{self.user.username}/status/{self.tweet_data.get('id', '')}"
         if keywords:
             message = f"Username: {self.user.username} [{self.user.channel_name}]\n" \
                       f"Keywords: {', '.join(keywords)}\n" \
@@ -51,29 +60,27 @@ class KeywordManager:
                       f"Full url: {url}"
             send_message(self.user.chat_id, message)
         else:
-            print(f"No keywords were found in {self.message.get('text', '')}")
+            print(f"No keywords were found in {self.tweet_data.get('text', '')}")
 
     def _process_retweets(self):
-        if self.message.get('retweeted_status', False):
-            if self.message.get('retweeted_status').get('truncated', False):
-                text = self.message.get('retweeted_status').get('extended_tweet', {}).get('full_text', '')
-            else:
-                text = self.message.get('retweeted_status').get('text')
+        if check_tweet_type(self.tweet_data) == 'retweeted':
+            tweet_id = self.tweet_data.get('referenced_tweets')[0].get('id')
+            tweet = api.get_status(tweet_id, tweet_mode="extended")._json
+            original_tweet = tweet.get('full_text')
 
-            print(f"*** retweet ***\n{text}")
+            print(f"*** retweet ***\n{original_tweet}")
 
-            keywords = self._get_keywords(text)
+            keywords = self._get_keywords(original_tweet)
+
             print(f"Found {len(keywords)} keywords")
 
             self._send_message(keywords, tweet_type="retweet")
             return True
 
-        if self.message.get('quoted_status', False):
-            if self.message.get('quoted_status').get('truncated', False):
-                quoted_text = self.message.get('quoted_status').get('extended_tweet', {}).get('full_text', '')
-            else:
-                quoted_text = self.message.get('quoted_status').get('text', '')
-            quote = self.message.get('text', '')
+        if check_tweet_type(self.tweet_data) == 'quoted':
+            tweet_id = self.tweet_data.get('referenced_tweets')[0].get('id')
+            quoted_text = api.get_status(tweet_id, tweet_mode="extended")._json.get('full_text')
+            quote = self.tweet_data.get('text', '')
 
             print(f"*** quote ***\n{quote}\n{quoted_text}")
 
@@ -89,31 +96,30 @@ class KeywordManager:
         return False
 
     def _process_replies(self):
-        if self.message.get('in_reply_to_status_id', False):
-            tweet = api.get_status(self.message.get('in_reply_to_status_id'))._json
-            text = tweet.get('text', '')
-            reply = self.message.get('text')
+        if check_tweet_type(self.tweet_data) == 'replied_to':
+            reply = self.tweet_data.get('text')
+            if self.tweet_data.get('referenced_tweets'):
+                original = api.get_status(
+                    self.tweet_data.get('referenced_tweets')[0].get('id'),
+                    tweet_mode="extended"
+                )
+                original_text = original._json.get('full_text')
 
-            print(f"*** reply ***\nReply: {reply}\nText: {text}")
+                print(f"*** reply ***\nReply: {reply}\nText: {original_text}")
 
-            keywords = []
-            keywords.extend(self._get_keywords(text))
-            keywords.extend(self._get_keywords(reply))
+                keywords = []
+                keywords.extend(self._get_keywords(original_text))
+                keywords.extend(self._get_keywords(reply))
 
-            print(f"Found {len(keywords)} keywords")
+                print(f"Found {len(keywords)} keywords")
 
-            self._send_message(keywords, tweet_type="reply")
-            return True
+                self._send_message(keywords, tweet_type="reply")
+                return True
         return False
 
     def _process_tweets(self):
-        if not (self.message.get('quoted_status', False) or self.message.get('retweeted_status', False)
-                or self.message.get('in_reply_to_status_id', False)):
-            if self.message.get('truncated', False):
-                text = self.message.get('extended_tweet', {}).get('full_text', '')
-            else:
-                text = self.message.get('text', '')
-
+        if not check_tweet_type(self.tweet_data):
+            text = self.tweet_data.get('text', '')
             keywords = self._get_keywords(text)
             self._send_message(keywords, tweet_type="tweet")
             return True

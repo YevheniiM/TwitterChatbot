@@ -2,11 +2,10 @@ import logging
 import time
 from threading import Thread
 
-import celery
 import tweepy
 from django.conf import settings
-from urllib3.exceptions import ProtocolError
 
+from tasks import app
 from twitter_app.models import TwitterUser
 
 logger = logging.getLogger("stream_listener")
@@ -16,41 +15,46 @@ auth.set_access_token(settings.ACCESS_TOKEN, settings.ACCESS_TOKEN_SECRET)
 api = tweepy.API(auth)
 
 
-class MyStreamListener(tweepy.Stream):
-    def __init__(self, consumer_key, consumer_secret, access_token,
-                 access_token_secret, **kwargs):
+class MyStreamListener(tweepy.StreamingClient):
+    def __init__(self, bearer_token, **kwargs):
         self.running = True
-        super().__init__(consumer_key, consumer_secret, access_token,
-                         access_token_secret, **kwargs)
+        super().__init__(bearer_token, **kwargs)
 
-    def on_status(self, status):
-        print("Got the new tweet...")
-        celery.current_app.send_task("twitter_app.tasks.parse_tweet", args=[status._json])
+    def on_tweet(self, tweet):
+        print(f"Got the new tweet: {tweet}\n{tweet.data}\n")
+        print(f"Extended:\n")
+        app.send_task("twitter_app.tasks.parse_tweet", args=[tweet.data])
 
         if not self.running:
             print("Raising exception in a listening thread")
             raise Exception("Users has been changed, restarting the app")
 
-    def on_error(self, status_code):
-        logger.error(f"on_error got {status_code} status code")
-        if status_code == 420:
-            return False
+    def on_errors(self, errors):
+        logger.error(f"on_error got {errors}")
         return True
 
-
 class ThreadedWrapper:
-    def __init__(self, stream: tweepy.Stream):
+    def __init__(self, stream: tweepy.StreamingClient):
         self.running = True
         self.stream = stream
 
     def threaded_function(self, initial_ids):
-        while self.running:
-            try:
-                self.stream.filter(follow=initial_ids, threaded=False, stall_warnings=True)
-            except (ProtocolError, AttributeError) as ex:
-                print(f"[ERROR]: protocol error: {ex}")
-                continue
-        print("Exiting the threaded_function....")
+        rule = ""
+        for i, id_ in enumerate(initial_ids):
+            if i == 0:
+                rule += f"from: {id_}"
+            else:
+                rule += f" OR from: {id_}"
+
+        self.stream.add_rules(tweepy.StreamRule(rule))
+        print(self.stream.get_rules())
+        self.stream.filter(expansions=[
+            'author_id',
+            'referenced_tweets.id',
+            'in_reply_to_user_id',
+            'entities.mentions.username',
+            'referenced_tweets.id.author_id',
+        ])
 
     def disconnect(self):
         self.running = False
@@ -62,10 +66,7 @@ def main():
 
     while True:
         try:
-            my_stream = MyStreamListener(settings.API_KEY,
-                                         settings.API_KEY_SECRET,
-                                         settings.ACCESS_TOKEN,
-                                         settings.ACCESS_TOKEN_SECRET)
+            my_stream = MyStreamListener(settings.BEARER_TOKEN)
 
             while True:
                 initial_ids = TwitterUser.objects.values_list("user_id", flat=True)

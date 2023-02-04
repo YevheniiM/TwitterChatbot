@@ -1,8 +1,7 @@
 amqp
 APScheduler
 asgiref
-backports.zoneinfo
-billiard
+backports.zoneinfo==0.2.1;python_version<"3.9"
 cachetools
 celery
 certifi
@@ -28,7 +27,7 @@ mysqlclient
 ndg-httpsclient
 oauthlib
 prompt-toolkit
-psycopg2
+psycopg2-binary
 ptb
 pyasn1
 pycparser
@@ -38,6 +37,7 @@ PySocks
 python-telegram-bot==13.7
 pytz
 PyYAML
+Redis
 requests
 requests-oauthlib
 searchtweets

@@ -27,7 +27,7 @@ class TwitterUserAdmin(admin.ModelAdmin):
         auth.set_access_token(settings.ACCESS_TOKEN, settings.ACCESS_TOKEN_SECRET)
         api = tweepy.API(auth)
         if 'username' in form.changed_data:
-            user = api.get_user(form.cleaned_data.get('username'))
+            user = api.get_user(screen_name=form.cleaned_data.get('username'))
             obj.user_id = user.id
             logger.info(f"Saved user with username: {obj.username}, id: {obj.user_id}")
         super().save_model(request, obj, form, change)

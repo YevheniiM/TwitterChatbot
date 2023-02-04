@@ -162,7 +162,7 @@ LOGGING = {
     },
 }
 
-CELERY_BROKER_URL = os.getenv("CLOUDAMQP_URL", "amqp://admin:admin@127.0.0.1:5672/myvhost")
+CELERY_BROKER_URL = os.getenv("CLOUDAMQP_URL", "redis://redis:6379/0")
 CELERY_SEND_EVENTS = False
 
 HIREFIRE_PROCS = ['tasks.WorkerProc']
