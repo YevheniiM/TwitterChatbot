@@ -1,6 +1,7 @@
 import logging
 import re
 
+import requests
 import tweepy
 from celery import shared_task
 from django.conf import settings
@@ -137,6 +138,7 @@ class KeywordManager:
         self._process_tweets()
 
     def _get_keywords(self, text):
+        text = self._replace_urls(text)
         keywords = self.user.keywords.all()
         found_keywords = []
 
@@ -147,6 +149,16 @@ class KeywordManager:
         logger.info(f"Found keywords: {found_keywords} for user: {self.user.username} [{self.user.user_id}]")
         return found_keywords
 
+    @staticmethod
+    def _replace_urls(text):
+        url_regex = re.compile(r"(http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+)")
+        urls = re.findall(url_regex, text)
+
+        for url in urls:
+            expanded_url = requests.head(url, allow_redirects=True).url
+            text = text.replace(url, expanded_url)
+
+        return text
 
 @shared_task
 def parse_tweet(tweet):

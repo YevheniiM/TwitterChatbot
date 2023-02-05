@@ -46,10 +46,11 @@ class ThreadedWrapper:
             else:
                 rule += f" OR from: {id_}"
 
-        rules_ids = [r.id for r in self.stream.get_rules().data]
-
-        if len(rules_ids):
-            print(self.stream.delete_rules(rules_ids))
+        rules = self.stream.get_rules().data
+        if rules:
+            rules_ids = [r.id for r in rules]
+            if len(rules_ids):
+                print(self.stream.delete_rules(rules_ids))
 
         print(self.stream.add_rules(tweepy.StreamRule(rule)))
 
