@@ -5,22 +5,27 @@ from django.conf import settings
 from django.contrib import admin
 from django.contrib.admin import display
 
-from twitter_app.models import TwitterUser, Keyword
+from twitter_app.models import TwitterUser, Keyword, ExcludedKeyword
 
 logger = logging.getLogger()
 
 
 class KeywordInline(admin.TabularInline):
     model = Keyword
-    verbose_name_plural = "Keyword"
+    verbose_name_plural = "Keywords"
+    max_num = 10
+
+class ExcludedKeywordInline(admin.TabularInline):
+    model = ExcludedKeyword
+    verbose_name_plural = "Excluded Keywords"
     max_num = 10
 
 
 class TwitterUserAdmin(admin.ModelAdmin):
-    inlines = [KeywordInline]
+    inlines = [KeywordInline, ExcludedKeywordInline]
     model = TwitterUser
 
-    list_display = ('username', 'get_keywords', 'channel_name')
+    list_display = ('username', 'get_keywords', 'get_excluded_keywords', 'channel_name')
 
     def save_model(self, request, obj, form, change):
         auth = tweepy.OAuthHandler(settings.API_KEY, settings.API_KEY_SECRET)
@@ -36,6 +41,11 @@ class TwitterUserAdmin(admin.ModelAdmin):
     def get_keywords(self, obj):
         return list(obj.keywords.all())
 
+    @display(description='Excluded keywords  ')
+    def get_excluded_keywords(self, obj):
+        return list(obj.excluded_keywords.all())
+
 
 admin.site.register(TwitterUser, TwitterUserAdmin)
 admin.site.register(Keyword)
+admin.site.register(ExcludedKeyword)

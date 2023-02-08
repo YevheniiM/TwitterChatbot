@@ -41,7 +41,7 @@ class KeywordManager:
             user_id = message.get('author_id')
             if user_id:
                 user = TwitterUser.objects.get(user_id=str(user_id))
-                print(f"Found user: {user}, keywords: {user.keywords}")
+                print(f"Found user: {user}")
                 return user
             print(f"User is not found, message: {message.get('text', '')}")
         except models.ObjectDoesNotExist as ex:
@@ -72,7 +72,6 @@ class KeywordManager:
             print(f"*** retweet ***\n{original_tweet}")
 
             keywords = self._get_keywords(original_tweet)
-
             print(f"Found {len(keywords)} keywords")
 
             self._send_message(keywords, tweet_type="retweet")
@@ -140,7 +139,13 @@ class KeywordManager:
     def _get_keywords(self, text):
         text = self._replace_urls(text)
         keywords = self.user.keywords.all()
+        excluded_keywords = self.user.excluded_keywords.all()
         found_keywords = []
+
+        for excluded in excluded_keywords:
+            if self.find_whole_word(excluded.keyword)(text) is not None:
+                logger.info(f"Excluding tweet, because found excluded keyword: {excluded.keyword}")
+                return []
 
         for keyword in keywords:
             if self.find_whole_word(keyword.keyword)(text) is not None:
