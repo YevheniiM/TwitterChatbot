@@ -4,6 +4,7 @@ asgiref
 backports.zoneinfo==0.2.1;python_version<"3.9"
 cachetools
 celery
+django-celery-beat==2.4.0
 certifi
 cffi
 charset-normalizer

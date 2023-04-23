@@ -165,6 +165,7 @@ class KeywordManager:
 
         return text
 
+
 @shared_task
 def parse_tweet(tweet):
     try:

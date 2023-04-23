@@ -61,6 +61,21 @@ services:
       - redis
       - web
       - script
+  celery-beat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: twitter_bot_celerybeat
+    restart: always
+    command: bash -c "cd src && celery -A tasks beat --loglevel=INFO --scheduler django_celery_beat.schedulers:DatabaseScheduler"
+    volumes:
+      - .:/code
+    env_file:
+      - ./.env
+    depends_on:
+      - redis
+      - web
+      - script
 
 volumes:
   my-db:

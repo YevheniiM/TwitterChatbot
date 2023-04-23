@@ -50,10 +50,14 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
+    'django_celery_beat',
+
     'telegram_app',
     'twitter_app',
     'twitter_chatbot',
-    'users'
+    'users',
+    'scheduling',
+    'monitoring'
 ]
 
 MIDDLEWARE = [
@@ -166,6 +170,9 @@ CELERY_BROKER_URL = os.getenv("CLOUDAMQP_URL", "redis://redis:6379/0")
 CELERY_SEND_EVENTS = False
 
 HIREFIRE_PROCS = ['tasks.WorkerProc']
+
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+
 
 # Configure Django App for Heroku.
 import django_heroku

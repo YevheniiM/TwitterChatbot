@@ -2,6 +2,7 @@ import logging
 import time
 from threading import Thread
 
+import requests.exceptions
 import tweepy
 from django.conf import settings
 
@@ -68,6 +69,25 @@ class ThreadedWrapper:
         self.stream.disconnect()
 
 
+def connect_to_twitter_api(retries=5, backoff_factor=2):
+    for retry_attempt in range(retries):
+        try:
+            auth = tweepy.OAuthHandler(settings.API_KEY, settings.API_KEY_SECRET)
+            auth.set_access_token(settings.ACCESS_TOKEN, settings.ACCESS_TOKEN_SECRET)
+            api = tweepy.API(auth)
+
+        except requests.exceptions.ConnectionError as e:
+            if retry_attempt == retries - 1:
+                print("Connection error: reached maximum retries")
+                raise e
+
+            sleep_time = backoff_factor * (2 ** retry_attempt)
+            print(f"Connection error: {e}. Retrying in {sleep_time} seconds.")
+            time.sleep(sleep_time)
+        else:
+            break
+
+
 def main():
     print("Starting stream_listener...")
 
@@ -98,6 +118,10 @@ def main():
                         break
 
                     time.sleep(0.5)
+        except requests.exceptions.ConnectionError as ex:
+            print("ConnectionError in the most outer while loop")
+            print(ex)
+            connect_to_twitter_api()
         except Exception as ex:
             print("Exception in the most outer while loop")
             print(ex)
