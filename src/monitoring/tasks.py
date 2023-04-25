@@ -22,7 +22,7 @@ def monitor_user(monitoring_id):
 
     try:
         # Get user's friends (accounts the user follows)
-        friends = api.get_friend_ids(screen_name=twitter_handle)
+        friends = api.get_friend_ids(screen_name=twitter_handle, count=5000)
 
         print(f'Friends: {friends}')
 
