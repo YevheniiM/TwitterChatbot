@@ -38,11 +38,12 @@ def monitor_user(monitoring_id):
         for friend_id in new_friends:
             friend, _ = Friends.objects.get_or_create(twitter_id=friend_id)
 
-            new_friend = api.get_user(user_id=friend_id)
-            target_profile_url = f"https://twitter.com/{quote(twitter_handle)}"
-            new_friend_profile_url = f"https://twitter.com/{quote(new_friend.screen_name)}"
-            message = f"{twitter_handle} ({target_profile_url}) started following {new_friend.screen_name} ({new_friend_profile_url})"
-            send_message(monitoring.telegram_channel, message)
+            if current_friends:
+                new_friend = api.get_user(user_id=friend_id)
+                target_profile_url = f"https://twitter.com/{quote(twitter_handle)}"
+                new_friend_profile_url = f"https://twitter.com/{quote(new_friend.screen_name)}"
+                message = f"{twitter_handle} ({target_profile_url}) started following {new_friend.screen_name} ({new_friend_profile_url})"
+                send_message(monitoring.telegram_channel, message)
 
             monitoring.friends.add(friend)
 
