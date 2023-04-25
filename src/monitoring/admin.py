@@ -2,7 +2,7 @@ from django import forms
 from django.contrib import admin, messages
 from django.core.exceptions import ValidationError
 
-from .models import TwitterMonitoring
+from .models import TwitterMonitoring, Friends
 
 
 class TwitterMonitoringForm(forms.ModelForm):
@@ -24,4 +24,9 @@ class TwitterMonitoringAdmin(admin.ModelAdmin):
             messages.error(request, str(e))
 
 
+class FriendsAdmin(admin.ModelAdmin):
+    pass
+
+
 admin.site.register(TwitterMonitoring, TwitterMonitoringAdmin)
+admin.site.register(Friends, FriendsAdmin)
