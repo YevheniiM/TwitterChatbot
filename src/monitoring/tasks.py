@@ -42,8 +42,8 @@ def monitor_user(monitoring_id):
                 new_friend = api.get_user(user_id=friend_id)
                 target_profile_url = f"https://twitter.com/{quote(twitter_handle)}"
                 new_friend_profile_url = f"https://twitter.com/{quote(new_friend.screen_name)}"
-                message = f"{twitter_handle} ({target_profile_url}) started following {new_friend.screen_name} ({new_friend_profile_url})"
-                send_message(monitoring.telegram_channel, message)
+                message = f'<a href="{target_profile_url}">{twitter_handle}</a> started following <a href="{new_friend_profile_url}">{new_friend.screen_name}</a>'
+                send_message(monitoring.telegram_channel, message, parse_mode='HTML', disable_web_page_preview=True)
 
             monitoring.friends.add(friend)
 
