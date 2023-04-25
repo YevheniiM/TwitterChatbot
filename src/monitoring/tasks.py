@@ -28,8 +28,8 @@ def monitor_user(monitoring_id):
 
         # Update friends
         current_friends = set(monitoring.friends.values_list('twitter_id', flat=True))
-        new_friends = set(friends) - current_friends
-        lost_friends = current_friends - set(friends)
+        new_friends = set(str(friend_id) for friend_id in friends) - current_friends
+        lost_friends = current_friends - set(str(friend_id) for friend_id in friends)
 
         if current_friends:
             print(f"New friends: {new_friends}")
