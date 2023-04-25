@@ -12,9 +12,12 @@ class TwitterMonitoringForm(forms.ModelForm):
 
 
 class TwitterMonitoringAdmin(admin.ModelAdmin):
-    form = TwitterMonitoringForm
-    list_display = ('twitter_handle', 'check_rate')
+    list_display = ('twitter_handle', 'check_rate', 'telegram_channel', 'friend_count')
     search_fields = ('twitter_handle',)
+
+    def friend_count(self, obj):
+        return obj.friends.count()
+    friend_count.short_description = 'Followings Count'
 
     def save_model(self, request, obj, form, change):
         try:
