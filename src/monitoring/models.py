@@ -6,7 +6,7 @@ from scheduling.models import TaskScheduler
 
 
 class Friends(models.Model):
-    twitter_id = models.IntegerField(primary_key=True)
+    twitter_id = models.CharField(primary_key=True, max_length=255)
 
 
 class TwitterMonitoring(models.Model):
