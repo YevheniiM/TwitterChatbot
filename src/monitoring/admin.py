@@ -2,6 +2,7 @@ from django import forms
 from django.contrib import admin, messages
 from django.core.exceptions import ValidationError
 
+from twitter_chatbot.admin import custom_admin_site
 from .models import TwitterMonitoring, Friends
 
 
@@ -31,5 +32,5 @@ class FriendsAdmin(admin.ModelAdmin):
     pass
 
 
-admin.site.register(TwitterMonitoring, TwitterMonitoringAdmin)
-admin.site.register(Friends, FriendsAdmin)
+custom_admin_site.register(TwitterMonitoring, TwitterMonitoringAdmin)
+custom_admin_site.register(Friends, FriendsAdmin)

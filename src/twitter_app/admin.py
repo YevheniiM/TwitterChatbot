@@ -6,6 +6,7 @@ from django.contrib import admin
 from django.contrib.admin import display
 
 from twitter_app.models import TwitterUser, Keyword, ExcludedKeyword
+from twitter_chatbot.admin import custom_admin_site
 
 logger = logging.getLogger()
 
@@ -46,6 +47,6 @@ class TwitterUserAdmin(admin.ModelAdmin):
         return list(obj.excluded_keywords.all())
 
 
-admin.site.register(TwitterUser, TwitterUserAdmin)
-admin.site.register(Keyword)
-admin.site.register(ExcludedKeyword)
+custom_admin_site.register(TwitterUser, TwitterUserAdmin)
+custom_admin_site.register(Keyword)
+custom_admin_site.register(ExcludedKeyword)

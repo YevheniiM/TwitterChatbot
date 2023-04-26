@@ -15,7 +15,10 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from twitter_app.views import custom_instructions
+from twitter_chatbot.admin import custom_admin_site
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path('admin/instructions', custom_instructions, name='custom_instructions'),
+    path('admin/', custom_admin_site.urls),
 ]

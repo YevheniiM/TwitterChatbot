@@ -1,3 +1,4 @@
 from django.shortcuts import render
 
-# Create your views here.
+def custom_instructions(request):
+    return render(request, 'admin/custom_instructions.html')
