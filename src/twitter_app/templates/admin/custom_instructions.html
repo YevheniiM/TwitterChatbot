@@ -1,14 +1,158 @@
 {% extends "admin/base_site.html" %}
 
+{% block extrahead %}
+    <style>
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        h1 {
+            font-size: 2.2em;
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            font-size: 1.8em;
+            margin-bottom: 10px;
+            margin-top: 30px;
+        }
+
+        h3 {
+            font-size: 1.4em;
+            margin-bottom: 5px;
+            margin-top: 20px;
+        }
+
+        p, ul, ol {
+            font-size: 1.1em;
+            line-height: 1.6;
+        }
+
+        ul, ol {
+            margin-left: 20px;
+        }
+
+        pre {
+            font-size: 1.2em;
+            background-color: rgba(255, 217, 116, 0.53);
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        code {
+            font-family: monospace;
+            background-color: rgba(113, 161, 248, 0.29);
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+
+        .highlight {
+            font-weight: bold;
+            color: #53a0d9;
+        }
+    </style>
+{% endblock %}
 
 {% block content %}
-  <div class="container">
-    <h1>Instructions for monitoring Twitter accounts</h1>
-    <p>Here are the instructions to set up Twitter monitoring:</p>
-    <ol>
-      <li>Step 1: Do this...</li>
-      <li>Step 2: Do that...</li>
-      <li>Step 3: Complete this task...</li>
-    </ol>
-  </div>
+    <div class="container">
+        <h1>Instructions for Monitoring Twitter Accounts and Tweets</h1>
+
+        <h2>Monitoring Twitter Accounts</h2>
+        <p>Follow these steps to set up <span class="highlight">Twitter account monitoring</span>:</p>
+        <ol>
+            <li>Create a <span class="highlight">Telegram channel</span>:</li>
+            <ul>
+                <li>Open the Telegram app.</li>
+                <li>Create a new channel and set a name, description, and unique public link (username).</li>
+                <li>Add any desired members to the channel (you should add the same bot as you did for other
+                    channels).
+                </li>
+            </ul>
+            <li>Get the <span class="highlight">Telegram channel ID</span>:</li>
+            <ul>
+                <li>Search for the bot @username_to_id_bot on Telegram and start a chat with it.</li>
+                <li>Send the public “join” link to your channel for getting notifications.</li>
+                <li>The bot will provide you with an integer value that represents the ID of your channel (with - sign
+                    most likely).
+                </li>
+            </ul>
+            <li>Set up the <span class="highlight">user monitoring</span> in Django admin:</li>
+            <ul>
+                <li>Log in to the Django admin panel.</li>
+                <li>Navigate to the "TwitterMonitoring" model.</li>
+                <li>Click "Add Twitter Monitoring" to create a new monitoring instance.</li>
+                <li>Enter the desired Twitter handle to monitor in the "Twitter handle" field.</li>
+                <li>Choose a check rate in minutes for the "Check rate" field. Note that the combined check rates of all
+                    instances must not exceed <span class="highlight">Twitter's API limits</span> (15 requests per 15
+                    minutes). Use the formula
+                    provided below to calculate the allowed check rate.
+                </li>
+                <li>Enter the Telegram channel ID you obtained earlier in the "Telegram channel" field (with - sign if
+                    it was there).
+                </li>
+                <li>Save the new monitoring instance.</li>
+            </ul>
+        </ol>
+
+        <h3>Allowed Check Rate Formula</h3>
+        <p>Use the following formula to calculate the allowed check rate for each monitored user:</p>
+        <pre>
+sum(total_minutes / rate_i) <= max_api_requests
+    </pre>
+        <p>
+            This formula helps to calculate the combined rate of all monitored users to stay within the allowed API
+            limits.
+        </p>
+        <ul>
+            <li><code>rate_i</code> represents the check rate for each monitored user in minutes.</li>
+            <li><code>total_minutes</code> refers to the total minutes in the considered time window (e.g., 15 minutes
+                for Twitter's API limit).
+            </li>
+            <li><code>max_api_requests</code> denotes the maximum number of API requests allowed within the time window
+                (e.g., 15 requests per 15 minutes for Twitter's API limit).
+            </li>
+        </ul>
+        <p>
+            For example, if the <span class="highlight">Twitter API limit</span> is 15 requests per 15 minutes, the
+            formula would be:
+            <code>sum(15 / rate_i) <= 15</code>
+        </p>
+        <p><span class="highlight">Example 1</span>: If you want to monitor 5 users simultaneously with the maximum allowed frequency, each user should
+            have a check rate of at most 5 minutes, because:</p>
+        <pre>sum(15 / rate_i) = 15/5 + 15/5 + 15/5 + 15/5 + 15/5 = 3 + 3 + 3 + 3 + 3 = 15</pre>
+        <p>In this case, the sum equals 15, which means that the check rates are exact to stay within the API limit. The
+            minimum check rate that satisfies the API limit is 3 minutes.</p>
+
+        <p><span class="highlight">Example 2</span>: If you want to monitor 2 users with a frequency of 3 minutes per each user, and 2 more users with
+            the minimum possible frequency according to the limits, you should set up the following check rates:</p>
+        <pre>User 1: 3 minutes
+User 2: 3 minutes
+User 3: 5 minutes
+User 4: 5 minutes
+
+sum(15 / rate_i) = 15/3 + 15/3 + 15/7 + 15/7 = 5 + 5 + 2 + 2 = 14</pre>
+        <p>In this case, the sum is less than 15, which means that the check rates less than API limit.</p>
+
+        <h2>Monitoring User's Tweets</h2>
+        <p>Follow these steps to <span class="highlight">monitor user's tweets</span>:</p>
+
+        <h2>Monitoring User's Tweets</h2>
+        <p>Follow these steps to monitor user's tweets:</p>
+        <ol>
+            <li>Create a channel in Telegram.</li>
+            <li>Find the id of that channel (use @username_to_id_bot).</li>
+            <li>In your channel settings, add the chatbot as a member (@twitter_tracking_bot).</li>
+            <li>Go to the admin page, log in.</li>
+            <li>Click "Add TwitterUser" or follow this link:
+                https://twitter-chatbot.herokuapp.com/admin/twitter_app/twitteruser/add/
+            </li>
+            <li>Enter the user's username and the channel id you got previously and click save (the user id will be
+                populated automatically).
+            </li>
+            <li>All the tweets that the user publishes will appear in the channel.</li>
+        </ol>
+    </div>
 {% endblock %}
+
