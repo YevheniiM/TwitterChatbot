@@ -1,10 +1,31 @@
 {% extends "admin/index.html" %}
 
+{% block extrastyle %}
+    {{ block.super }}
+    <style>
+        .extra-nav {
+            display: inline-block;
+            margin-left: 20px;
+        }
+        @media (max-width: 767px) {
+            .extra-nav {
+                display: block;
+                margin-left: 0;
+                margin-top: 10px;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block nav-global %}
+    {{ block.super }}
+    {% if custom_instructions_link %}
+        <div class="extra-nav">
+            {{ custom_instructions_link|safe }}
+        </div>
+    {% endif %}
+{% endblock %}
+
 {% block footer %}
-  {{ block.super }}
-  {% if custom_instructions_link %}
-    <div class="extra-nav" style="width: 150px; margin-left: 20px">
-      {{ custom_instructions_link|safe }}
-    </div>
-  {% endif %}
+    {{ block.super }}
 {% endblock %}
